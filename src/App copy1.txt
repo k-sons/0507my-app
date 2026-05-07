@@ -1,0 +1,111 @@
+import { FormEvent, useState } from 'react'
+import { mockUsers, type MockUser } from './mockUsers'
+
+type LoginResult = Pick<MockUser, 'id' | 'name' | 'email'>
+
+function fakeLogin(id: string, password: string): Promise<LoginResult> {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const user = mockUsers.find((item) => item.id === id && item.password === password)
+
+      if (!user) {
+        reject(new Error('아이디 또는 비밀번호가 올바르지 않습니다.'))
+        return
+      }
+
+      resolve({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      })
+    }, 800)
+  })
+}
+
+function App() {
+  const [id, setId] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [user, setUser] = useState<LoginResult | null>(null)
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError('')
+
+    if (!id.trim() || !password.trim()) {
+      setError('아이디와 비밀번호를 입력해 주세요.')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const loggedInUser = await fakeLogin(id.trim(), password.trim())
+      setUser(loggedInUser)
+      setPassword('')
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : '로그인 중 오류가 발생했습니다.'
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLogout = () => {
+    setUser(null)
+    setId('')
+    setPassword('')
+    setError('')
+  }
+
+  if (user) {
+    return (
+      <main>
+        <h1>React Login Practice</h1>
+        <p>
+          환영합니다, {user.name} ({user.id})
+        </p>
+        <p>이메일: {user.email}</p>
+        <button type="button" onClick={handleLogout}>
+          로그아웃
+        </button>
+      </main>
+    )
+  }
+
+  return (
+    <main>
+      <h1>React Login Practice</h1>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="user-id">아이디</label>
+          <input
+            id="user-id"
+            type="text"
+            value={id}
+            onChange={(event) => setId(event.target.value)}
+            autoComplete="username"
+            disabled={loading}
+          />
+        </div>
+        <div>
+          <label htmlFor="user-password">비밀번호</label>
+          <input
+            id="user-password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            disabled={loading}
+          />
+        </div>
+        <button type="submit" disabled={loading}>
+          {loading ? '로그인 중...' : '로그인'}
+        </button>
+      </form>
+      {error ? <p>{error}</p> : null}
+    </main>
+  )
+}
+
+export default App
