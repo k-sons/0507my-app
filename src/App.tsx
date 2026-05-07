@@ -8,26 +8,49 @@ function App() {
   const [id, setId] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [idError, setIdError] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [formError, setFormError] = useState('')
   const [user, setUser] = useState<LoginResult | null>(null)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setError('')
+    setFormError('')
 
-    if (!id.trim() || !password.trim()) {
-      setError('아이디와 비밀번호를 입력해 주세요.')
+    const trimmedId = id.trim()
+    const trimmedPassword = password.trim()
+
+    let hasError = false
+
+    if (!trimmedId) {
+      setIdError('아이디를 입력해 주세요.')
+      hasError = true
+    } else {
+      setIdError('')
+    }
+
+    if (!trimmedPassword) {
+      setPasswordError('비밀번호를 입력해 주세요.')
+      hasError = true
+    } else if (trimmedPassword.length < 4) {
+      setPasswordError('비밀번호는 4자 이상 입력해 주세요.')
+      hasError = true
+    } else {
+      setPasswordError('')
+    }
+
+    if (hasError) {
       return
     }
 
     try {
       setLoading(true)
-      const loggedInUser = await fakeLogin(id.trim(), password.trim())
+      const loggedInUser = await fakeLogin(trimmedId, trimmedPassword)
       setUser(loggedInUser)
       setPassword('')
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : '로그인 중 오류가 발생했습니다.'
-      setError(message)
+      setFormError(message)
     } finally {
       setLoading(false)
     }
@@ -37,7 +60,9 @@ function App() {
     setUser(null)
     setId('')
     setPassword('')
-    setError('')
+    setIdError('')
+    setPasswordError('')
+    setFormError('')
   }
 
   if (user) {
@@ -56,9 +81,21 @@ function App() {
         id={id}
         password={password}
         loading={loading}
-        error={error}
-        onIdChange={setId}
-        onPasswordChange={setPassword}
+        idError={idError}
+        passwordError={passwordError}
+        formError={formError}
+        onIdChange={(value) => {
+          setId(value)
+          if (idError) {
+            setIdError('')
+          }
+        }}
+        onPasswordChange={(value) => {
+          setPassword(value)
+          if (passwordError) {
+            setPasswordError('')
+          }
+        }}
         onSubmit={handleSubmit}
       />
     </main>
